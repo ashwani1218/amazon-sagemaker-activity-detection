@@ -1,37 +1,37 @@
-AWSTemplateFormatVersion: "2010-09-09"
-Description: "CloudFormation template to create a lambda function."
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template to create a lambda function.'
 
 Parameters:
     LambdaName:
         Type: String
         Description: Lambda function name
-        Default: "activity-detection-lambda"
+        Default: 'activity-detection-lambda'
 
     LambdaCodeBucket:
         Type: String
         Description: "Lambda SourceCode bucket name."
-        Default: "activity-detection-data-bucket"
+        Default: 'activity-detection-data-bucket'
 
     TriggerBucketName:
         Type: String
         Description: "S3 bucket name used to create a trigger."
-        Default: "activity-detection-livestream-bucket"
-
-    DetectionTableName:
+        Default: 'activity-detection-livestream-bucket'
+        
+    DetectionTableName: 
         Type: String
         Description: DynamoDB table to save prediction results
         Default: "activity-detection-table"
 
-    EndpointName:
+    EndpointName: 
         Type: String
         Description: SageMaker endpoint for model deployment
         Default: "activity-detection-endpoint"
 
-    ModelMaxFrames:
+    ModelMaxFrames: 
         Type: Number
         Description: Maximum number of frames used for activity detection model
         Default: 32
-
+        
 Resources:
     LivestreamLambdaFunction:
         Type: AWS::Lambda::Function
@@ -39,7 +39,7 @@ Resources:
             FunctionName: !Ref LambdaName
             Runtime: python3.9
             Role: !GetAtt LivestreamLambdaRole.Arn
-            Code:
+            Code: 
                 S3Bucket: !Ref LambdaCodeBucket
                 S3Key: "artifacts/amazon-sagemaker-activity-detection/deployment/lambda/lambda_function.zip"
             Handler: lambda_function.lambda_handler
@@ -57,41 +57,41 @@ Resources:
             Action: lambda:InvokeFunction
             FunctionName: !Ref LivestreamLambdaFunction
             Principal: s3.amazonaws.com
-            SourceArn:
+            SourceArn: 
                 Fn::Sub: "arn:aws:s3:::${TriggerBucketName}"
             SourceAccount: !Ref AWS::AccountId
-
+            
     LambdaTrigger:
-        Type: AWS::S3::Bucket
-        DependsOn: LivestreamLambdaPermission
-        Properties:
-            BucketName: !Ref TriggerBucketName
-            NotificationConfiguration:
-                LambdaConfigurations:
-                    - Event: s3:ObjectCreated:*
-                      Filter:
-                          S3Key:
-                              Rules:
-                                  - Name: prefix
-                                    Value: "livestream_pipe/"
-                                  - Name: suffix
-                                    Value: ".ts"
-                      Function: !GetAtt LivestreamLambdaFunction.Arn
-
+       Type: AWS::S3::Bucket
+       DependsOn: LivestreamLambdaPermission
+       Properties:
+           BucketName: !Ref TriggerBucketName
+           NotificationConfiguration:
+               LambdaConfigurations:
+                   - Event: s3:ObjectCreated:*
+                     Filter:
+                       S3Key:
+                           Rules:
+                               - Name: prefix
+                                 Value: "livestream_pipe/"
+                               - Name: suffix
+                                 Value: ".ts"
+                     Function: !GetAtt LivestreamLambdaFunction.Arn
+                     
     LivestreamLambdaRole:
-        Type: "AWS::IAM::Role"
+        Type: 'AWS::IAM::Role'
         Properties:
-            RoleName: "LivestreamLambdaRole"
+            RoleName: 'LivestreamLambdaRole'
             AssumeRolePolicyDocument:
                 Version: 2012-10-17
                 Statement:
-                    - Effect: Allow
-                      Principal:
-                          Service:
-                              - "lambda.amazonaws.com"
-                      Action:
-                          - "sts:AssumeRole"
+                  - Effect: Allow
+                    Principal:
+                      Service:
+                      - "lambda.amazonaws.com"
+                    Action:
+                      - 'sts:AssumeRole'
             ManagedPolicyArns:
-                - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-                - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
+                - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+                - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
+                - 'arn:aws:iam::aws:policy/AmazonSageMakerFullAccess'
